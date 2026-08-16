@@ -1,10 +1,13 @@
-import sys
 import os
+import sys
 
-# Add root directory to sys.path
+# Ensure root and backend directories are in sys.path for Vercel Serverless environment
 ROOT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-if ROOT_DIR not in sys.path:
-    sys.path.insert(0, ROOT_DIR)
+BACKEND_DIR = os.path.join(ROOT_DIR, "backend")
+
+for p in [ROOT_DIR, BACKEND_DIR]:
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 try:
     from backend.app.main import app
@@ -17,5 +20,6 @@ except Exception as e:
         return {
             "status": "error",
             "message": "FastAPI Serverless Function Exception",
-            "detail": str(e)
+            "detail": str(e),
+            "sys_path": sys.path
         }
