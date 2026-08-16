@@ -6,14 +6,23 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-is_vercel = bool(os.getenv("VERCEL") or os.getenv("VERCEL_ENV"))
+# Read and validate DATABASE_URL environment variable safely
+raw_db_url = (os.getenv("DATABASE_URL") or "").strip()
 
-if is_vercel:
-    DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///:memory:")
+# If empty, blank, or placeholder string, use safe SQLite database URL
+if not raw_db_url or "=" in raw_db_url or len(raw_db_url) < 6:
+    if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+        DATABASE_URL = "sqlite:///:memory:"
+    else:
+        BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        DEFAULT_DB_PATH = os.path.join(BASE_DIR, "deliveries.db")
+        DATABASE_URL = f"sqlite:///{DEFAULT_DB_PATH}"
 else:
-    BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    DEFAULT_DB_PATH = os.path.join(BASE_DIR, "deliveries.db")
-    DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
+    # Fix legacy postgres:// prefix for SQLAlchemy 2.0 compatibility
+    if raw_db_url.startswith("postgres://"):
+        DATABASE_URL = raw_db_url.replace("postgres://", "postgresql://", 1)
+    else:
+        DATABASE_URL = raw_db_url
 
 if DATABASE_URL.startswith("sqlite:///:memory:"):
     engine = create_engine(
