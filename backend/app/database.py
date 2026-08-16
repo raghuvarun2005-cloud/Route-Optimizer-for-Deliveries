@@ -5,9 +5,13 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# Default to local SQLite database in backend directory if DATABASE_URL is not set
+# Default to local SQLite database; on Vercel Serverless environment use writable /tmp directory
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DEFAULT_DB_PATH = os.path.join(BASE_DIR, "deliveries.db")
+if os.getenv("VERCEL") or os.getenv("VERCEL_ENV"):
+    DEFAULT_DB_PATH = "/tmp/deliveries.db"
+else:
+    DEFAULT_DB_PATH = os.path.join(BASE_DIR, "deliveries.db")
+
 DATABASE_URL = os.getenv("DATABASE_URL", f"sqlite:///{DEFAULT_DB_PATH}")
 
 connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
