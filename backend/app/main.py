@@ -44,22 +44,27 @@ def health_check():
         "database": "SQLite/SQLAlchemy"
     }
 
-# Serve built frontend static files if available
+# Serve built frontend static files if available locally
 FRONTEND_DIST = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "frontend", "dist")
 if os.path.exists(FRONTEND_DIST):
-    app.mount("/static", StaticFiles(directory=FRONTEND_DIST), name="static")
+    try:
+        app.mount("/static", StaticFiles(directory=FRONTEND_DIST), name="static")
 
-    @app.get("/")
-    def read_root():
-        index_path = os.path.join(FRONTEND_DIST, "index.html")
-        if os.path.exists(index_path):
-            return FileResponse(index_path)
-        return {"message": "Route Optimizer API is running. Access endpoints via /api/ routes."}
+        @app.get("/")
+        def read_root():
+            index_path = os.path.join(FRONTEND_DIST, "index.html")
+            if os.path.exists(index_path):
+                return FileResponse(index_path)
+            return {"message": "Route Optimizer API is running. Access endpoints via /api/ routes."}
+    except Exception as e:
+        @app.get("/")
+        def read_root_fallback():
+            return {"message": "Route Optimizer API is online.", "health": "/api/health", "docs": "/docs"}
 else:
     @app.get("/")
     def read_root():
         return {
-            "message": "Route Optimizer API is online. Direct your browser to http://localhost:5173 for the React Frontend UI.",
+            "message": "Route Optimizer API is online.",
             "health": "/api/health",
             "docs": "/docs"
         }
